@@ -17,7 +17,7 @@ It supports the following:
 
 ## Installation
 
-First, the dependencies should be installed using pip or the provided conda environment : 
+First, the dependencies should be installed the provided conda environment depending on your OS : 
 
 ```bash
 conda env create -f environment.yml
