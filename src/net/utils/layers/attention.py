@@ -3,7 +3,7 @@ from torch.nn import functional as F
 
 class UNetAttentionGate(nn.Module):
     def __init__(self, in_channels, gating_channels, inter_channels=None):
-        super(AttentionGate, self).__init__()
+        super(UNetAttentionGate, self).__init__()
         
         inter_channels = inter_channels or in_channels // 2
         self.W_g = nn.Conv2d(gating_channels, inter_channels, kernel_size=1)
@@ -19,3 +19,21 @@ class UNetAttentionGate(nn.Module):
         psi = self.psi(psi)
         attention = self.sigmoid(psi)
         return x * attention
+    
+class SEBlock(nn.Module):
+    def __init__(self, channels, reduction=4):
+        super(SEBlock, self).__init__()
+        self.global_avg_pool = nn.AdaptiveAvgPool2d(1)
+        self.fc1 = nn.Linear(channels, channels // reduction, bias=False)
+        self.relu = nn.ReLU(inplace=True)
+        self.fc2 = nn.Linear(channels // reduction, channels, bias=False)
+        self.sigmoid = nn.Sigmoid()
+
+    def forward(self, x):
+        batch, channels, _, _ = x.shape
+        se = self.global_avg_pool(x).view(batch, channels)  # Global Average Pooling
+        se = self.fc1(se)
+        se = self.relu(se)
+        se = self.fc2(se)
+        se = self.sigmoid(se).view(batch, channels, 1, 1)  # Reshape for broadcasting
+        return x * se  # Scale input features

@@ -49,7 +49,7 @@ class BaseExperiment(AbstractExperiment):
 
         logging.info('Initialization of the experiment - {}'.format(experiment_name))
         self.device = get_available_device()
-
+        logging.info(f'Experiments running on device : {self.device}')
         # CORE INIT
         self.model = self.load_model(config['model'])
         self.dataloader = self.load_dataloader(config['dataloader'])
@@ -57,7 +57,7 @@ class BaseExperiment(AbstractExperiment):
 
         # LOGGER 
         if self.config['track']:
-            wandb.init(project="CompressedUNET", name=experiment_name, config=config, id=date_time, dir=self.log_dir)
+            wandb.init(project="SpikingFastMRI", name=experiment_name, config=config, id=date_time, dir=self.log_dir)
             wandb.watch(self.model)
 
     def load_model(self, model_config) -> nn.Module:

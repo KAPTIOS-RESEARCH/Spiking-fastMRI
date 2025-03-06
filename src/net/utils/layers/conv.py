@@ -2,6 +2,7 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 from .regularization import ICLayer
+from .attention import SEBlock
 
 class DepthwiseSeparableConv(nn.Module):
     def __init__(self, in_channels, out_channels):
@@ -105,7 +106,7 @@ class TransposeConvBlock(nn.Module):
 
 
 class ResConvBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, stride=1, expansion=4, kernel_size=3, padding=1):
+    def __init__(self, in_channels, out_channels, stride=1, expansion=4, kernel_size=3, padding=1, drop_prob = 0.01, use_attention = False):
         """
         Initialize a residual convolutional block with a bottleneck design.
         
@@ -122,23 +123,25 @@ class ResConvBlock(nn.Module):
         # Bottleneck layer: 1x1 convolution to reduce the number of channels
         self.conv1 = nn.Sequential(
             nn.Conv2d(in_channels, out_channels // expansion, kernel_size=1, stride=1, padding=0),
-            nn.InstanceNorm2d(out_channels // expansion),
             nn.LeakyReLU(0.2, inplace=True),
+            ICLayer(out_channels // expansion, drop_prob),
         )
     
         # 3x3 convolution (main convolution)
         self.conv2 = nn.Sequential(
             nn.Conv2d(out_channels // expansion, out_channels // expansion, kernel_size=kernel_size, stride=stride, padding=padding),
-            nn.InstanceNorm2d(out_channels // expansion),
             nn.LeakyReLU(0.2, inplace=True),
+            ICLayer(out_channels // expansion, drop_prob),
         )
         
         # Bottleneck layer: 1x1 convolution to increase the number of channels back
         self.conv3 = nn.Sequential(
             nn.Conv2d(out_channels // expansion, out_channels, kernel_size=1, stride=1, padding=0),
-            nn.InstanceNorm2d(out_channels),
+            ICLayer(out_channels, drop_prob),
+            SEBlock(out_channels, 4) if use_attention else None
         )
         
+
         # Shortcut connection (identity mapping) for matching the dimensions
         if in_channels != out_channels:
             self.shortcut = nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=stride, padding=0)

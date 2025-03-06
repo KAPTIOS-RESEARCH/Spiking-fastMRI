@@ -2,9 +2,10 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 from src.net.utils.layers.conv import *
+from src.net.utils.layers.attention import SEBlock
 
 class VanillaUNet(nn.Module):
-    def __init__(self, in_channels=1, out_channels=1, features=[64, 128, 256, 512], drop_prob: float = 0.0):
+    def __init__(self, in_channels=1, out_channels=1, features=[64, 128, 256, 512], drop_prob: float = 0.0, use_attention = True):
         super(VanillaUNet, self).__init__()
         self.encoder = nn.ModuleList()
         self.decoder = nn.ModuleList()
@@ -12,6 +13,8 @@ class VanillaUNet(nn.Module):
         # Encoder
         for feature in features:
             self.encoder.append(DoubleConvBlock(in_channels, feature, drop_prob=drop_prob))
+            if use_attention:
+                self.encoder.append(SEBlock(feature))
             in_channels = feature
 
         # Bottleneck
@@ -21,6 +24,8 @@ class VanillaUNet(nn.Module):
         for feature in reversed(features):
             self.decoder.append(TransposeConvBlock(feature * 2, feature))
             self.decoder.append(DoubleConvBlock(feature * 2, feature, drop_prob=drop_prob))
+            if use_attention:
+                self.decoder.append(SEBlock(feature))
 
         # Final layer
         self.final_conv = nn.Conv2d(features[0], out_channels, kernel_size=1)
@@ -52,23 +57,23 @@ class VanillaUNet(nn.Module):
         return self.final_conv(x)
 
 class ResUNet(nn.Module):
-    def __init__(self, in_channels=1, out_channels=1, features=[64, 128, 256, 512], drop_prob: float = 0.0):
+    def __init__(self, in_channels=1, out_channels=1, features=[64, 128, 256, 512], drop_prob: float = 0.0, use_attention = True):
         super(ResUNet, self).__init__()
         self.encoder = nn.ModuleList()
         self.decoder = nn.ModuleList()
 
         # Encoder
         for feature in features:
-            self.encoder.append(ResConvBlock(in_channels, feature))
+            self.encoder.append(ResConvBlock(in_channels, feature, drop_prob=drop_prob, use_attention=use_attention))
             in_channels = feature
 
         # Bottleneck
-        self.bottleneck = ResConvBlock(features[-1], features[-1] * 2)
+        self.bottleneck = ResConvBlock(features[-1], features[-1] * 2, drop_prob, use_attention=use_attention)
 
         # Decoder
         for feature in reversed(features):
             self.decoder.append(TransposeConvBlock(feature * 2, feature))
-            self.decoder.append(ResConvBlock(feature * 2, feature))
+            self.decoder.append(ResConvBlock(feature * 2, feature, drop_prob, use_attention=use_attention))
 
         # Final layer
         self.final_conv = nn.Conv2d(features[0], out_channels, kernel_size=1)

@@ -20,7 +20,7 @@ class ReconstructionCIFAR10Loader(AbstractDataloader):
                  data_dir: str, 
                  input_size: tuple = (32, 32), 
                  batch_size: int = 8, 
-                 num_workers: int = 2,
+                 num_workers: int = 8,
                  debug: bool = True):
         
         super(ReconstructionCIFAR10Loader, self).__init__()

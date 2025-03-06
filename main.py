@@ -5,7 +5,7 @@ from src.core.experiment import AbstractExperiment
 
 if __name__ == "__main__":
 
-    project_name = "CompressedUNET"
+    project_name = "SpikingFastMRI"
 
     logging.basicConfig(
         level=logging.INFO,
