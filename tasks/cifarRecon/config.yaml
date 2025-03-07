@@ -3,13 +3,13 @@ seed: 1234
 track: &track True
 script_path: /Users/bniepce/Projects/Research/MRI/Spiking-fastMRI/
 model:
-  class_name: VanillaUNet
+  class_name: ResUNet
   module_name: src.net.models.unet.vanilla
   parameters:
     in_channels: 1
     out_channels: 1
     features: !!python/list [32, 64, 128, 256]
-    drob_prob: 0.01
+    drop_prob: 0.01
     use_attention: True
 
 dataloader:

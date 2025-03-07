@@ -2,6 +2,7 @@ from torch import nn
 from torch.nn import functional as F
 
 class UNetAttentionGate(nn.Module):
+    """UNet Attention Gate"""
     def __init__(self, in_channels, gating_channels, inter_channels=None):
         super(UNetAttentionGate, self).__init__()
         
@@ -21,7 +22,8 @@ class UNetAttentionGate(nn.Module):
         return x * attention
     
 class SEBlock(nn.Module):
-    def __init__(self, channels, reduction=4):
+    """Squeeze-Excitation Block"""
+    def __init__(self, channels, reduction=16):
         super(SEBlock, self).__init__()
         self.global_avg_pool = nn.AdaptiveAvgPool2d(1)
         self.fc1 = nn.Linear(channels, channels // reduction, bias=False)
@@ -31,9 +33,9 @@ class SEBlock(nn.Module):
 
     def forward(self, x):
         batch, channels, _, _ = x.shape
-        se = self.global_avg_pool(x).view(batch, channels)  # Global Average Pooling
+        se = self.global_avg_pool(x).view(batch, channels)
         se = self.fc1(se)
         se = self.relu(se)
         se = self.fc2(se)
-        se = self.sigmoid(se).view(batch, channels, 1, 1)  # Reshape for broadcasting
-        return x * se  # Scale input features
+        se = self.sigmoid(se).view(batch, channels, 1, 1)
+        return x * se
